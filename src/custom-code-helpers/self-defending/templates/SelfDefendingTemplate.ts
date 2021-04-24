@@ -1,19 +1,15 @@
-import { IEscapeSequenceEncoder } from '../../../interfaces/utils/IEscapeSequenceEncoder';
-
 /**
  * SelfDefendingTemplate. Enters code in infinity loop.
- * Notice, that second and third call to recursiveFunc1('indexOf') has cyrillic `е` character instead latin
  *
- * @param {IEscapeSequenceEncoder} escapeSequenceEncoder
  * @returns {string}
  */
-export function SelfDefendingTemplate (escapeSequenceEncoder: IEscapeSequenceEncoder): string {
+export function SelfDefendingTemplate (): string {
     return `
         const {selfDefendingFunctionName} = {callControllerFunctionName}(this, function () {
             const test = function () {
                 const regExp = test
                     .constructor('return /" + this + "/')()
-                    .compile('^([^ ]+( +[^ ]+)+)+[^ ]}');
+                    .constructor('^([^ ]+( +[^ ]+)+)+[^ ]}');
                 
                 return !regExp.test({selfDefendingFunctionName});
             };

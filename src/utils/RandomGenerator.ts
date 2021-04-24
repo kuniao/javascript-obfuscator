@@ -11,12 +11,15 @@ import { ISourceCode } from '../interfaces/source-code/ISourceCode';
 
 import { initializable } from '../decorators/Initializable';
 
+import { alphabetString } from '../constants/AlphabetString';
+import { alphabetStringUppercase } from '../constants/AlphabetStringUppercase';
+
 @injectable()
 export class RandomGenerator implements IRandomGenerator, IInitializable {
     /**
      * @type {string}
      */
-    public static readonly randomGeneratorPool: string = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    public static readonly randomGeneratorPool: string = `${alphabetString}${alphabetStringUppercase}`;
 
     /**
      * @type {Chance.Chance}
@@ -75,6 +78,26 @@ export class RandomGenerator implements IRandomGenerator, IInitializable {
             min: min,
             max: max
         });
+    }
+
+    /**
+     * @param {number} min
+     * @param {number} max
+     * @param {number[]} valuesToExclude
+     * @returns {number}
+     */
+    public getRandomIntegerExcluding (min: number, max: number, valuesToExclude: number[]): number {
+        const valuesToPickArray: number[] = [];
+
+        for (let value: number = min; value <= max; value++) {
+            if (valuesToExclude.includes(value)) {
+                continue;
+            }
+
+            valuesToPickArray.push(value);
+        }
+
+        return this.randomGenerator.pickone(valuesToPickArray);
     }
 
     /**

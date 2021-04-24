@@ -18,7 +18,7 @@ export function StringArrayBase64DecodeTemplate (
             {atobPolyfill}
             
             {stringArrayCallsWrapperName}.${base64DecodeFunctionIdentifier} = function (str) {
-                const string = atob(str);
+                const string = {atobFunctionName}(str);
                 let newStringChars = [];
                 
                 for (let i = 0, length = string.length; i < length; i++) {
@@ -33,13 +33,15 @@ export function StringArrayBase64DecodeTemplate (
             {stringArrayCallsWrapperName}.${initializedIdentifier} = true;
         }
                   
-        const cachedValue = {stringArrayCallsWrapperName}.${dataIdentifier}[index];
+        const firstValue = {stringArrayName}[0];
+        const cacheKey = index + firstValue;
+        const cachedValue = {stringArrayCallsWrapperName}.${dataIdentifier}[cacheKey];
                         
         if (cachedValue === undefined) {
             {selfDefendingCode}
             
             value = {stringArrayCallsWrapperName}.${base64DecodeFunctionIdentifier}(value);
-            {stringArrayCallsWrapperName}.${dataIdentifier}[index] = value;
+            {stringArrayCallsWrapperName}.${dataIdentifier}[cacheKey] = value;
         } else {
             value = cachedValue;
         }

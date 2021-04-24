@@ -6,10 +6,23 @@ export interface IArrayUtils {
     createWithRange (length: number): number[];
 
     /**
+     * @param {number} length
+     * @param {(index: number) => TValue} valueFunction
+     * @returns {TValue[]}
+     */
+    fillWithRange <TValue> (length: number, valueFunction: (index: number) => TValue): TValue[];
+
+    /**
      * @param {T[]} array
      * @returns {T | null}
      */
     findMostOccurringElement <T extends string | number> (array: T[]): T | null;
+
+    /**
+     * @param {T[]} array
+     * @returns {T | undefined}
+     */
+    getLastElement <T> (array: T[]): T | undefined;
 
     /**
      * @param array

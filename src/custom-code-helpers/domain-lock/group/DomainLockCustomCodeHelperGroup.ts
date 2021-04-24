@@ -15,14 +15,13 @@ import { ICallsGraphData } from '../../../interfaces/analyzers/calls-graph-analy
 import { initializable } from '../../../decorators/Initializable';
 
 import { CustomCodeHelper } from '../../../enums/custom-code-helpers/CustomCodeHelper';
-import { ObfuscationEvent } from '../../../enums/event-emitters/ObfuscationEvent';
+import { NodeTransformationStage } from '../../../enums/node-transformers/NodeTransformationStage';
 
 import { AbstractCustomCodeHelperGroup } from '../../AbstractCustomCodeHelperGroup';
 import { CallsControllerFunctionCodeHelper } from '../../calls-controller/CallsControllerFunctionCodeHelper';
 import { DomainLockCodeHelper } from '../DomainLockCodeHelper';
 import { NodeAppender } from '../../../node/NodeAppender';
 import { NodeLexicalScopeUtils } from '../../../node/NodeLexicalScopeUtils';
-import { NodeGuards } from '../../../node/NodeGuards';
 
 @injectable()
 export class DomainLockCustomCodeHelperGroup extends AbstractCustomCodeHelperGroup {
@@ -31,11 +30,6 @@ export class DomainLockCustomCodeHelperGroup extends AbstractCustomCodeHelperGro
      */
     @initializable()
     protected customCodeHelpers!: Map <CustomCodeHelper, ICustomCodeHelper>;
-
-    /**
-     * @type {ObfuscationEvent}
-     */
-    protected readonly appendEvent: ObfuscationEvent = ObfuscationEvent.BeforeObfuscation;
 
     /**
      * @type {TCustomCodeHelperFactory}
@@ -64,7 +58,7 @@ export class DomainLockCustomCodeHelperGroup extends AbstractCustomCodeHelperGro
      * @param {TNodeWithStatements} nodeWithStatements
      * @param {ICallsGraphData[]} callsGraphData
      */
-    public appendNodes (nodeWithStatements: TNodeWithStatements, callsGraphData: ICallsGraphData[]): void {
+    public appendOnPreparingStage (nodeWithStatements: TNodeWithStatements, callsGraphData: ICallsGraphData[]): void {
         if (!this.options.domainLock.length) {
             return;
         }
@@ -82,11 +76,9 @@ export class DomainLockCustomCodeHelperGroup extends AbstractCustomCodeHelperGro
             .getLexicalScope(domainLockFunctionHostNode) ?? null;
 
         const domainLockFunctionName: string = domainLockFunctionLexicalScopeNode
-            && NodeGuards.isProgramNode(domainLockFunctionLexicalScopeNode)
             ? this.identifierNamesGenerator.generate(domainLockFunctionLexicalScopeNode)
             : this.identifierNamesGenerator.generateNext();
         const callsControllerFunctionName: string = domainLockFunctionLexicalScopeNode
-            && NodeGuards.isProgramNode(domainLockFunctionLexicalScopeNode)
             ? this.identifierNamesGenerator.generate(domainLockFunctionLexicalScopeNode)
             : this.identifierNamesGenerator.generateNext();
 
@@ -104,7 +96,7 @@ export class DomainLockCustomCodeHelperGroup extends AbstractCustomCodeHelperGro
         this.appendCustomNodeIfExist(
             CustomCodeHelper.CallsControllerFunction,
             (customCodeHelper: ICustomCodeHelper<TInitialData<CallsControllerFunctionCodeHelper>>) => {
-                customCodeHelper.initialize(this.appendEvent, callsControllerFunctionName);
+                customCodeHelper.initialize(NodeTransformationStage.Preparing, callsControllerFunctionName);
 
                 NodeAppender.prepend(callsControllerHostNode, customCodeHelper.getNode());
             }

@@ -1,19 +1,24 @@
 import { assert } from 'chai';
-import { TypeFromEnum } from '@gradecam/tsenum';
 
+import { TDictionary } from '../../../src/types/TDictionary';
 import { TInputOptions } from '../../../src/types/options/TInputOptions';
-import { TObject } from '../../../src/types/TObject';
+import { TOptionsPreset } from '../../../src/types/options/TOptionsPreset';
+import { TTypeFromEnum } from '../../../src/types/utils/TTypeFromEnum';
 
 import { IObfuscatedCode } from '../../../src/interfaces/source-code/IObfuscatedCode';
 
 import { SourceMapMode } from '../../../src/enums/source-map/SourceMapMode';
-import { StringArrayEncoding } from '../../../src/enums/StringArrayEncoding';
+import { StringArrayEncoding } from '../../../src/enums/node-transformers/string-array-transformers/StringArrayEncoding';
+import { StringArrayIndexesType } from '../../../src/enums/node-transformers/string-array-transformers/StringArrayIndexesType';
+import { StringArrayWrappersType } from '../../../src/enums/node-transformers/string-array-transformers/StringArrayWrappersType';
 
 import { JavaScriptObfuscator } from '../../../src/JavaScriptObfuscatorFacade';
 
+import { HIGH_OBFUSCATION_PRESET } from '../../../src/options/presets/HighObfuscation';
 import { NO_ADDITIONAL_NODES_PRESET } from '../../../src/options/presets/NoCustomNodes';
 
 import { IdentifierNamesGenerator } from '../../../src/enums/generators/identifier-names-generators/IdentifierNamesGenerator';
+import { OptionsPreset } from '../../../src/enums/options/presets/OptionsPreset';
 
 import { buildLargeCode } from '../../helpers/buildLargeCode';
 import { getRegExpMatch } from '../../helpers/getRegExpMatch';
@@ -272,7 +277,7 @@ describe('JavaScriptObfuscator', () => {
 
             describe('Variant #4: with `stringArray`, `renameGlobals` and `identifiersPrefix` options', () => {
                 const stringArrayRegExp: RegExp = /^var foo_0x(\w){4} *= *\['abc'\];/;
-                const stringArrayCallRegExp: RegExp = /var foo_0x(\w){4,6} *= *foo_0x(\w){4}\('0x0'\);$/;
+                const stringArrayCallRegExp: RegExp = /var foo_0x(\w){4,6} *= *foo_0x(\w){4}\(0x0\);$/;
 
                 let obfuscatedCode: string;
 
@@ -364,7 +369,7 @@ describe('JavaScriptObfuscator', () => {
 
         describe('latin literal variable value', () => {
             const stringArrayLatinRegExp: RegExp = /^var _0x(\w){4} *= *\['abc'\];/;
-            const stringArrayCallRegExp: RegExp = /var test *= *_0x(\w){4}\('0x0'\);$/;
+            const stringArrayCallRegExp: RegExp = /var test *= *_0x(\w){4}\(0x0\);$/;
 
             let obfuscatedCode: string;
 
@@ -392,7 +397,7 @@ describe('JavaScriptObfuscator', () => {
 
         describe('cyrillic literal variable value', () => {
             const stringArrayCyrillicRegExp: RegExp = /^var _0x(\w){4} *= *\['абц'\];/;
-            const stringArrayCallRegExp: RegExp = /var test *= *_0x(\w){4}\('0x0'\);$/;
+            const stringArrayCallRegExp: RegExp = /var test *= *_0x(\w){4}\(0x0\);$/;
 
             let obfuscatedCode: string;
 
@@ -547,6 +552,54 @@ describe('JavaScriptObfuscator', () => {
             });
         });
 
+        /**
+         * https://github.com/estools/escodegen/pull/408
+         */
+        describe('`ObjectPattern` with single `RestElement`', () => {
+            const regExp: RegExp = /const {\.\.\.foo} *= *{};/;
+
+            let obfuscatedCode: string;
+
+            beforeEach(() => {
+                const code: string = readFileAsString(__dirname + '/fixtures/object-pattern-single-rest-element.js');
+
+                obfuscatedCode = JavaScriptObfuscator.obfuscate(
+                    code,
+                    {
+                        ...NO_ADDITIONAL_NODES_PRESET
+                    }
+                ).getObfuscatedCode();
+            });
+
+            it('should not break on `ObjectPattern` with single `RestElement`', () => {
+                assert.match(obfuscatedCode, regExp);
+            });
+        });
+
+        /**
+         * https://github.com/estools/escodegen/pull/415
+         */
+        describe('Precedence of `SequenceExpression` in computed property', () => {
+            const regExp: RegExp = /class Foo *{ *\[\(bar, *baz\)]\(\) *{ *} * *}/;
+
+            let obfuscatedCode: string;
+
+            beforeEach(() => {
+                const code: string = readFileAsString(__dirname + '/fixtures/precedence-of-sequence-expression-in-computed-property.js');
+
+                obfuscatedCode = JavaScriptObfuscator.obfuscate(
+                    code,
+                    {
+                        ...NO_ADDITIONAL_NODES_PRESET
+                    }
+                ).getObfuscatedCode();
+            });
+
+            it('should generate a valid js code', () => {
+                assert.match(obfuscatedCode, regExp);
+            });
+        });
+
         describe('new.target MetaProperty', () => {
             const regExp: RegExp = /new\.target *=== *Foo/;
 
@@ -585,6 +638,30 @@ describe('JavaScriptObfuscator', () => {
             });
 
             it('should support `import.meta`', () => {
+                assert.match(obfuscatedCode, regExp);
+            });
+        });
+
+        /**
+         * https://github.com/javascript-obfuscator/javascript-obfuscator/issues/710
+         */
+        describe('export * as', () => {
+            const regExp: RegExp = /export *\* *as foo from *'bar';/;
+
+            let obfuscatedCode: string;
+
+            beforeEach(() => {
+                const code: string = readFileAsString(__dirname + '/fixtures/export-all-named-support.js');
+
+                obfuscatedCode = JavaScriptObfuscator.obfuscate(
+                    code,
+                    {
+                        ...NO_ADDITIONAL_NODES_PRESET
+                    }
+                ).getObfuscatedCode();
+            });
+
+            it('should support `export * as` syntax', () => {
                 assert.match(obfuscatedCode, regExp);
             });
         });
@@ -634,6 +711,95 @@ describe('JavaScriptObfuscator', () => {
             });
         });
 
+        describe('Optional chaining support', () => {
+            const regExp: RegExp = new RegExp(
+                'const _0x(\\w){4,6} *= *{ *' +
+                    '\'bar\': *\\(\\) *=> *{} *' +
+                '}; *' +
+                '_0x(\\w){4,6}\\?\\.\\[\'bar\']\\?\\.\\(\\);'
+            );
+
+            let obfuscatedCode: string;
+
+            beforeEach(() => {
+                const code: string = readFileAsString(__dirname + '/fixtures/optional-chaining-support.js');
+
+                obfuscatedCode = JavaScriptObfuscator.obfuscate(
+                    code,
+                    {
+                        ...NO_ADDITIONAL_NODES_PRESET
+                    }
+                ).getObfuscatedCode();
+            });
+
+            it('should support optional chaining', () => {
+                assert.match(obfuscatedCode, regExp);
+            });
+        });
+
+        describe('Nullish coalescing support', () => {
+            const regExp: RegExp = /\(foo *\?\? *bar\) *&& *baz;/;
+
+            let obfuscatedCode: string;
+
+            beforeEach(() => {
+                const code: string = readFileAsString(__dirname + '/fixtures/nullish-coalescing-support.js');
+
+                obfuscatedCode = JavaScriptObfuscator.obfuscate(
+                    code,
+                    {
+                        ...NO_ADDITIONAL_NODES_PRESET
+                    }
+                ).getObfuscatedCode();
+            });
+
+            it('should support nullish coalescing operator', () => {
+                assert.match(obfuscatedCode, regExp);
+            });
+        });
+
+        describe('Numeric separators support', () => {
+            const regExp: RegExp = /const foo *= *0x64;/;
+
+            let obfuscatedCode: string;
+
+            beforeEach(() => {
+                const code: string = readFileAsString(__dirname + '/fixtures/numeric-separators-support.js');
+
+                obfuscatedCode = JavaScriptObfuscator.obfuscate(
+                    code,
+                    {
+                        ...NO_ADDITIONAL_NODES_PRESET
+                    }
+                ).getObfuscatedCode();
+            });
+
+            it('should support numeric separators', () => {
+                assert.match(obfuscatedCode, regExp);
+            });
+        });
+
+        describe('Top-level await support', () => {
+            const regExp: RegExp = /await 0x1;/;
+
+            let obfuscatedCode: string;
+
+            beforeEach(() => {
+                const code: string = readFileAsString(__dirname + '/fixtures/top-level-await-support.js');
+
+                obfuscatedCode = JavaScriptObfuscator.obfuscate(
+                    code,
+                    {
+                        ...NO_ADDITIONAL_NODES_PRESET
+                    }
+                ).getObfuscatedCode();
+            });
+
+            it('should support top-level await', () => {
+                assert.match(obfuscatedCode, regExp);
+            });
+        });
+
         describe('mangled identifier names generator', () => {
             const regExp: RegExp = /var c *= *0x1/;
 
@@ -645,7 +811,31 @@ describe('JavaScriptObfuscator', () => {
                 obfuscatedCode = JavaScriptObfuscator.obfuscate(
                     code,
                     {
-                        identifierNamesGenerator: IdentifierNamesGenerator.MangledIdentifierNamesGenerator
+                        ...NO_ADDITIONAL_NODES_PRESET,
+                        identifierNamesGenerator: IdentifierNamesGenerator.MangledIdentifierNamesGenerator,
+                        stringArray: true,
+                        stringArrayThreshold: 1
+                    }
+                ).getObfuscatedCode();
+            });
+
+            it('should mangle obfuscated code', () => {
+                assert.match(obfuscatedCode, regExp);
+            });
+        });
+
+        describe('mangled shuffled identifier names generator', () => {
+            const regExp: RegExp = /var [a-zA-Z] *= *0x1/;
+
+            let obfuscatedCode: string;
+
+            beforeEach(() => {
+                const code: string = readFileAsString(__dirname + '/fixtures/mangle.js');
+
+                obfuscatedCode = JavaScriptObfuscator.obfuscate(
+                    code,
+                    {
+                        identifierNamesGenerator: IdentifierNamesGenerator.MangledShuffledIdentifierNamesGenerator
                     }
                 ).getObfuscatedCode();
             });
@@ -741,9 +931,24 @@ describe('JavaScriptObfuscator', () => {
                         deadCodeInjection: true,
                         deadCodeInjectionThreshold: 1,
                         disableConsoleOutput: false,
+                        numbersToExpressions: true,
+                        simplify: true,
+                        renameProperties: true,
                         rotateStringArray: true,
                         stringArray: true,
-                        stringArrayEncoding: StringArrayEncoding.Rc4,
+                        stringArrayEncoding: [
+                            StringArrayEncoding.Base64,
+                            StringArrayEncoding.Rc4
+                        ],
+                        stringArrayIndexesType: [
+                            StringArrayIndexesType.HexadecimalNumber,
+                            StringArrayIndexesType.HexadecimalNumericString
+                        ],
+                        stringArrayIndexShift: true,
+                        stringArrayWrappersChainedCalls: true,
+                        stringArrayWrappersCount: 10,
+                        stringArrayWrappersParametersMaxCount: 5,
+                        stringArrayWrappersType: StringArrayWrappersType.Function,
                         stringArrayThreshold: 1,
                         transformObjectKeys: true,
                         unicodeEscapeSequence: false
@@ -758,18 +963,64 @@ describe('JavaScriptObfuscator', () => {
             });
         });
 
+        describe('Eval `Hello World`', function () {
+            this.timeout(20000);
+
+            const samplesCount: number = 100;
+            const expectedEvaluationResult: string = 'Hello World';
+            let isEvaluationSuccessful: boolean = true;
+
+            before(() => {
+                const code: string = readFileAsString(__dirname + '/fixtures/eval-hello-world.js');
+
+                for (let i = 0; i < samplesCount; i++) {
+                    const obfuscatedCode: string = JavaScriptObfuscator.obfuscate(
+                        code,
+                        {
+                            ...NO_ADDITIONAL_NODES_PRESET,
+                            compact: false,
+                            controlFlowFlattening: true,
+                            controlFlowFlatteningThreshold: 1,
+                            deadCodeInjection: true,
+                            deadCodeInjectionThreshold: 1,
+                            disableConsoleOutput: true,
+                            identifierNamesGenerator: IdentifierNamesGenerator.MangledIdentifierNamesGenerator,
+                            renameProperties: true,
+                            simplify: false,
+                            stringArray: true,
+                            stringArrayThreshold: 1,
+                            stringArrayWrappersChainedCalls: true,
+                            stringArrayWrappersCount: 1,
+                            stringArrayWrappersType: StringArrayWrappersType.Variable
+                        }
+                    ).getObfuscatedCode();
+
+                    const evaluationResult: string = eval(obfuscatedCode);
+
+                    if (evaluationResult !== expectedEvaluationResult) {
+                        isEvaluationSuccessful = false;
+                        break;
+                    }
+                }
+            });
+
+            it('should correctly evaluate obfuscated code', () => {
+                assert.equal(isEvaluationSuccessful, true);
+            });
+        });
+
         describe('Identifier names collision between base code and appended string array nodes', function () {
             this.timeout(10000);
 
             const samplesCount: number = 30;
 
             let areCollisionsExists: boolean = false;
-            let obfuscateFunc: (identifierNamesGenerator: TypeFromEnum<typeof IdentifierNamesGenerator>) => string;
+            let obfuscateFunc: (identifierNamesGenerator: TTypeFromEnum<typeof IdentifierNamesGenerator>) => string;
 
             before(() => {
                 const code: string = readFileAsString(__dirname + '/fixtures/custom-nodes-identifier-names-collision.js');
 
-                obfuscateFunc = (identifierNamesGenerator: TypeFromEnum<typeof IdentifierNamesGenerator>) => {
+                obfuscateFunc = (identifierNamesGenerator: TTypeFromEnum<typeof IdentifierNamesGenerator>) => {
                     const obfuscatedCode = JavaScriptObfuscator.obfuscate(
                         code,
                         {
@@ -788,7 +1039,7 @@ describe('JavaScriptObfuscator', () => {
                 [
                     IdentifierNamesGenerator.DictionaryIdentifierNamesGenerator,
                     IdentifierNamesGenerator.MangledIdentifierNamesGenerator
-                ].forEach((identifierNamesGenerator: TypeFromEnum<typeof IdentifierNamesGenerator>) => {
+                ].forEach((identifierNamesGenerator: TTypeFromEnum<typeof IdentifierNamesGenerator>) => {
                     for (let i = 0; i < samplesCount; i++) {
                         try {
                             eval(obfuscateFunc(identifierNamesGenerator));
@@ -834,10 +1085,9 @@ describe('JavaScriptObfuscator', () => {
                         {
                             ...NO_ADDITIONAL_NODES_PRESET,
                             ...baseParams,
-                            stringArrayEncoding: StringArrayEncoding.Rc4
+                            stringArrayEncoding: [StringArrayEncoding.Rc4]
                         }
                     ).getObfuscatedCode();
-
                 });
 
                 it('does not break on run', () => {
@@ -857,7 +1107,7 @@ describe('JavaScriptObfuscator', () => {
                             {
                                 ...NO_ADDITIONAL_NODES_PRESET,
                                 ...baseParams,
-                                stringArrayEncoding: StringArrayEncoding.Rc4
+                                stringArrayEncoding: [StringArrayEncoding.Rc4]
                             }
                         ).getObfuscatedCode();
 
@@ -879,7 +1129,7 @@ describe('JavaScriptObfuscator', () => {
                             {
                                 ...NO_ADDITIONAL_NODES_PRESET,
                                 ...baseParams,
-                                stringArrayEncoding: StringArrayEncoding.Rc4
+                                stringArrayEncoding: [StringArrayEncoding.Rc4]
                             }
                         ).getObfuscatedCode();
                     });
@@ -902,7 +1152,7 @@ describe('JavaScriptObfuscator', () => {
                             {
                                 ...NO_ADDITIONAL_NODES_PRESET,
                                 ...baseParams,
-                                stringArrayEncoding: StringArrayEncoding.Rc4
+                                stringArrayEncoding: [StringArrayEncoding.Rc4]
                             }
                         ).getObfuscatedCode();
 
@@ -924,7 +1174,7 @@ describe('JavaScriptObfuscator', () => {
                             {
                                 ...NO_ADDITIONAL_NODES_PRESET,
                                 ...baseParams,
-                                stringArrayEncoding: StringArrayEncoding.Base64
+                                stringArrayEncoding: [StringArrayEncoding.Base64]
                             }
                         ).getObfuscatedCode();
 
@@ -974,7 +1224,7 @@ describe('JavaScriptObfuscator', () => {
         });
 
         describe('invalid source codes object', () => {
-            let testFunc: () => TObject<IObfuscatedCode>;
+            let testFunc: () => TDictionary<IObfuscatedCode>;
 
             beforeEach(() => {
                 testFunc = () => JavaScriptObfuscator.obfuscateMultiple(
@@ -988,6 +1238,36 @@ describe('JavaScriptObfuscator', () => {
 
             it('Should throw an error if source codes object is not a plain object', () => {
                 assert.throw(testFunc, Error);
+            });
+        });
+    });
+
+    describe('getOptionsByPreset', () => {
+        describe('Variant #1: base behaviour', () => {
+            const optionsPresetName: TOptionsPreset = OptionsPreset.HighObfuscation;
+
+            let options: TInputOptions;
+
+            before(() => {
+                options = JavaScriptObfuscator.getOptionsByPreset(optionsPresetName);
+            });
+
+            it('Should return options for passed options preset name', () => {
+                assert.deepEqual(options, HIGH_OBFUSCATION_PRESET);
+            });
+        });
+
+        describe('Variant #2: unknown options preset name', () => {
+            const optionsPresetName: TOptionsPreset = 'foobar' as TOptionsPreset;
+
+            let testFunc: () => TInputOptions;
+
+            before(() => {
+                testFunc = () => JavaScriptObfuscator.getOptionsByPreset(optionsPresetName);
+            });
+
+            it('Should throws an error when unknown option preset is passed', () => {
+                assert.throws(testFunc, 'Options for preset name `foobar` are not found');
             });
         });
     });

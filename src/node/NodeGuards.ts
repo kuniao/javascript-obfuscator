@@ -1,6 +1,9 @@
+/* eslint-disable max-lines */
 import * as ESTree from 'estree';
 
 import { TNodeWithLexicalScope } from '../types/node/TNodeWithLexicalScope';
+import { TNodeWithLexicalScopeStatements } from '../types/node/TNodeWithLexicalScopeStatements';
+import { TNodeWithSingleStatementBody } from '../types/node/TNodeWithSingleStatementBody';
 import { TNodeWithStatements } from '../types/node/TNodeWithStatements';
 
 import { NodeType } from '../enums/node/NodeType';
@@ -119,8 +122,32 @@ export class NodeGuards {
      * @param {Node} node
      * @returns {boolean}
      */
+    public static isDoWhileStatementNode (node: ESTree.Node): node is ESTree.DoWhileStatement {
+        return node.type === NodeType.DoWhileStatement;
+    }
+
+    /**
+     * @param {Node} node
+     * @returns {boolean}
+     */
+    public static isExportAllDeclarationNode (node: ESTree.Node): node is ESTree.ExportAllDeclaration {
+        return node.type === NodeType.ExportAllDeclaration;
+    }
+
+    /**
+     * @param {Node} node
+     * @returns {boolean}
+     */
     public static isExportNamedDeclarationNode (node: ESTree.Node): node is ESTree.ExportNamedDeclaration {
         return node.type === NodeType.ExportNamedDeclaration;
+    }
+
+    /**
+     * @param {Node} node
+     * @returns {boolean}
+     */
+    public static isExportSpecifierNode (node: ESTree.Node): node is ESTree.ExportSpecifier {
+        return node.type === NodeType.ExportSpecifier;
     }
 
     /**
@@ -130,6 +157,30 @@ export class NodeGuards {
     public static isExpressionStatementNode (node: ESTree.Node): node is ESTree.ExpressionStatement {
         return node.type === NodeType.ExpressionStatement
             && !('directive' in node);
+    }
+
+    /**
+     * @param {Node} node
+     * @returns {boolean}
+     */
+    public static isForStatementNode (node: ESTree.Node): node is ESTree.ForStatement {
+        return node.type === NodeType.ForStatement;
+    }
+
+    /**
+     * @param {Node} node
+     * @returns {boolean}
+     */
+    public static isForInStatementNode (node: ESTree.Node): node is ESTree.ForInStatement {
+        return node.type === NodeType.ForInStatement;
+    }
+
+    /**
+     * @param {Node} node
+     * @returns {boolean}
+     */
+    public static isForOfStatementNode (node: ESTree.Node): node is ESTree.ForOfStatement {
+        return node.type === NodeType.ForOfStatement;
     }
 
     /**
@@ -166,6 +217,27 @@ export class NodeGuards {
      */
     public static isIdentifierNode (node: ESTree.Node): node is ESTree.Identifier {
         return node.type === NodeType.Identifier;
+    }
+
+    /**
+     * @param {Node} node
+     * @returns {boolean}
+     */
+    public static isIfStatementNode (node: ESTree.Node): node is ESTree.IfStatement {
+        return node.type === NodeType.IfStatement;
+    }
+
+    /**
+     * @param {Node} node
+     * @returns {boolean}
+     */
+    public static isIfStatementNodeWithSingleStatementBody (node: ESTree.Node): node is ESTree.IfStatement {
+        if (!NodeGuards.isIfStatementNode(node)) {
+           return false;
+        }
+
+        return !NodeGuards.isBlockStatementNode(node.consequent)
+            || (!!node.alternate && !NodeGuards.isBlockStatementNode(node.alternate));
     }
 
     /**
@@ -255,6 +327,35 @@ export class NodeGuards {
     }
 
     /**
+     * Checks if a node is the node with single statement body, like:
+     * while (true)
+     *     console.log(1);
+     *
+     * or:
+     *
+     *
+     * @param {Node} node
+     * @returns {boolean}
+     */
+    public static isNodeWithSingleStatementBody (node: ESTree.Node): node is TNodeWithSingleStatementBody {
+        // Different approach for `IfStatement` node because this node hasn't `body` property
+        if (NodeGuards.isIfStatementNode(node)) {
+            return NodeGuards.isIfStatementNodeWithSingleStatementBody(node);
+        }
+
+        // All other nodes with `Statement` node as `body` property
+        return (
+            NodeGuards.isForStatementNode(node)
+            || NodeGuards.isForOfStatementNode(node)
+            || NodeGuards.isForInStatementNode(node)
+            || NodeGuards.isWhileStatementNode(node)
+            || NodeGuards.isDoWhileStatementNode(node)
+            || NodeGuards.isWithStatementNode(node)
+            || NodeGuards.isLabeledStatementNode(node)
+        ) && !NodeGuards.isBlockStatementNode(node.body);
+    }
+
+    /**
      * @param {Node} node
      * @param {Node} parentNode
      * @returns {boolean}
@@ -262,7 +363,7 @@ export class NodeGuards {
     public static isNodeWithLexicalScopeStatements (
         node: ESTree.Node,
         parentNode: ESTree.Node
-    ): node is TNodeWithStatements {
+    ): node is TNodeWithLexicalScopeStatements {
         return NodeGuards.isProgramNode(node)
             || (NodeGuards.isBlockStatementNode(node) && NodeGuards.nodesWithLexicalStatements.includes(parentNode.type));
     }
@@ -345,6 +446,14 @@ export class NodeGuards {
      * @param {Node} node
      * @returns {boolean}
      */
+    public static isSpreadElementNode (node: ESTree.Node): node is ESTree.SpreadElement {
+        return node.type === NodeType.SpreadElement;
+    }
+
+    /**
+     * @param {Node} node
+     * @returns {boolean}
+     */
     public static isSuperNode (node: ESTree.Node): node is ESTree.Super {
         return node.type === NodeType.Super;
     }
@@ -385,15 +494,6 @@ export class NodeGuards {
      * @param {Node} node
      * @returns {boolean}
      */
-    public static isUseStrictOperator (node: ESTree.Node): node is ESTree.Directive {
-        return NodeGuards.isDirectiveNode(node)
-            && node.directive === 'use strict';
-    }
-
-    /**
-     * @param {Node} node
-     * @returns {boolean}
-     */
     public static isVariableDeclarationNode (node: ESTree.Node): node is ESTree.VariableDeclaration {
         return node.type === NodeType.VariableDeclaration;
     }
@@ -410,7 +510,23 @@ export class NodeGuards {
      * @param {Node} node
      * @returns {boolean}
      */
+    public static isWithStatementNode (node: ESTree.Node): node is ESTree.WithStatement {
+        return node.type === NodeType.WithStatement;
+    }
+
+    /**
+     * @param {Node} node
+     * @returns {boolean}
+     */
     public static isWhileStatementNode (node: ESTree.Node): node is ESTree.WhileStatement {
         return node.type === NodeType.WhileStatement;
+    }
+
+    /**
+     * @param {Node} node
+     * @returns {boolean}
+     */
+    public static isYieldExpressionNode (node: ESTree.Node): node is ESTree.YieldExpression {
+        return node.type === NodeType.YieldExpression;
     }
 }

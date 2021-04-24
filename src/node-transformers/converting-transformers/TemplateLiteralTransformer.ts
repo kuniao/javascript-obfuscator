@@ -40,15 +40,6 @@ export class TemplateLiteralTransformer extends AbstractNodeTransformer {
     }
 
     /**
-     * @param {Node} node
-     * @param {Node | null} parentNode
-     * @returns {boolean}
-     */
-    private static isValidTemplateLiteralNode (node: ESTree.Node, parentNode: ESTree.Node): node is ESTree.TemplateLiteral {
-        return NodeGuards.isTemplateLiteralNode(node) && !NodeGuards.isTaggedTemplateExpressionNode(parentNode);
-    }
-
-    /**
      * @param {NodeTransformationStage} nodeTransformationStage
      * @returns {IVisitor | null}
      */
@@ -57,7 +48,7 @@ export class TemplateLiteralTransformer extends AbstractNodeTransformer {
             case NodeTransformationStage.Converting:
                 return {
                     enter: (node: ESTree.Node, parentNode: ESTree.Node | null): ESTree.Node | undefined => {
-                        if (parentNode && TemplateLiteralTransformer.isValidTemplateLiteralNode(node, parentNode)) {
+                        if (parentNode && NodeGuards.isTemplateLiteralNode(node)) {
                             return this.transformNode(node, parentNode);
                         }
                     }
@@ -69,16 +60,33 @@ export class TemplateLiteralTransformer extends AbstractNodeTransformer {
     }
 
     /**
-     * @param {TemplateLiteral} templateLiteralNode
-     * @param {NodeGuards} parentNode
-     * @returns {NodeGuards}
+     * @param {ESTree.TemplateLiteral} templateLiteralNode
+     * @param {ESTree.Node} parentNode
+     * @returns {ESTree.Node}
      */
     public transformNode (templateLiteralNode: ESTree.TemplateLiteral, parentNode: ESTree.Node): ESTree.Node {
+        if (NodeGuards.isTaggedTemplateExpressionNode(parentNode)) {
+            return templateLiteralNode;
+        }
+
+        return this.transformTemplateLiteralNode(templateLiteralNode, parentNode);
+    }
+
+    /**
+     * @param {ESTree.TemplateLiteral} templateLiteralNode
+     * @param {ESTree.Node} parentNode
+     * @returns {ESTree.Expression}
+     */
+    private transformTemplateLiteralNode (templateLiteralNode: ESTree.TemplateLiteral, parentNode: ESTree.Node): ESTree.Expression {
         const templateLiteralExpressions: ESTree.Expression[] = templateLiteralNode.expressions;
 
         let nodes: ESTree.Expression[] = [];
 
         templateLiteralNode.quasis.forEach((templateElement: ESTree.TemplateElement) => {
+            if (templateElement.value.cooked === undefined || templateElement.value.cooked === null) {
+                return;
+            }
+
             nodes.push(NodeFactory.literalNode(templateElement.value.cooked));
 
             const expression: ESTree.Expression | undefined = templateLiteralExpressions.shift();

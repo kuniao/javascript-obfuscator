@@ -20,16 +20,32 @@ describe('CryptUtils', () => {
     });
 
     describe('btoa', () => {
-        const expectedString: string = 'c3RyaW5n';
+       describe('Variant #1: basic', () => {
+           const expectedString: string = 'c3RyaW5n';
 
-        let string: string;
+           let string: string;
 
-        before(() => {
-            string = cryptUtils.btoa('string');
-        });
+           before(() => {
+               string = cryptUtils.btoa('string');
+           });
 
-        it('should create a base-64 encoded string from a given string', () => {
-            assert.equal(string, expectedString);
+           it('should create a base-64 encoded string from a given string', () => {
+               assert.equal(string, expectedString);
+           });
+       });
+
+        describe('Variant #2: padding characters', () => {
+            const expectedString: string = 'c3RyaQ==';
+
+            let string: string;
+
+            before(() => {
+                string = cryptUtils.btoa('stri');
+            });
+
+            it('should create a base-64 encoded string from a given string with padding characters', () => {
+                assert.equal(string, expectedString);
+            });
         });
     });
 

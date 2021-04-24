@@ -1,4 +1,7 @@
 {
+  "ts-node": {
+    "files": true
+  },
   "compilerOptions": {
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
@@ -8,7 +11,9 @@
     ],
     "target": "es2017",
     "module": "commonjs",
+    "resolveJsonModule": true,
     "esModuleInterop": true,
+    "noImplicitOverride": false,
     "noImplicitThis": false,
     "noUnusedLocals": true,
     "removeComments": true,

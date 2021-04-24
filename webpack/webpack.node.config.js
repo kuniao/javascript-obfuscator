@@ -34,6 +34,14 @@ module.exports = {
     resolve: {
         extensions: ['.ts']
     },
+    cache: {
+        type: 'filesystem',
+        buildDependencies: {
+            config: [
+                __filename
+            ]
+        }
+    },
     plugins: [
         new webpack.BannerPlugin(
             {
@@ -50,18 +58,21 @@ module.exports = {
             BUILD_TIMESTAMP: Date.now()
         }),
         new ForkTsCheckerWebpackPlugin({
-            tsconfig: 'src/tsconfig.node.json',
-            eslint: true
+            eslint: {
+                files: 'src/**/*.ts'
+            },
+            typescript: {
+                configFile: 'src/tsconfig.node.json'
+            }
         }),
         new ForkTsCheckerNotifierWebpackPlugin({
             skipFirstNotification: true
         })
     ],
     output: {
-        libraryTarget:  'commonjs2',
-        library: 'JavaScriptObfuscator'
+        libraryTarget:  'commonjs2'
     },
     stats: {
-        maxModules: 0
+        excludeModules: true
     }
 };

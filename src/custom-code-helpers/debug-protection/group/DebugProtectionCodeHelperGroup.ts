@@ -15,7 +15,7 @@ import { ICallsGraphData } from '../../../interfaces/analyzers/calls-graph-analy
 import { initializable } from '../../../decorators/Initializable';
 
 import { CustomCodeHelper } from '../../../enums/custom-code-helpers/CustomCodeHelper';
-import { ObfuscationEvent } from '../../../enums/event-emitters/ObfuscationEvent';
+import { NodeTransformationStage } from '../../../enums/node-transformers/NodeTransformationStage';
 
 import { AbstractCustomCodeHelperGroup } from '../../AbstractCustomCodeHelperGroup';
 import { CallsControllerFunctionCodeHelper } from '../../calls-controller/CallsControllerFunctionCodeHelper';
@@ -33,11 +33,6 @@ export class DebugProtectionCodeHelperGroup extends AbstractCustomCodeHelperGrou
      */
     @initializable()
     protected customCodeHelpers!: Map <CustomCodeHelper, ICustomCodeHelper>;
-
-    /**
-     * @type {ObfuscationEvent}
-     */
-    protected readonly appendEvent: ObfuscationEvent = ObfuscationEvent.BeforeObfuscation;
 
     /**
      * @type {TCustomCodeHelperFactory}
@@ -66,7 +61,7 @@ export class DebugProtectionCodeHelperGroup extends AbstractCustomCodeHelperGrou
      * @param {TNodeWithStatements} nodeWithStatements
      * @param {ICallsGraphData[]} callsGraphData
      */
-    public appendNodes (nodeWithStatements: TNodeWithStatements, callsGraphData: ICallsGraphData[]): void {
+    public appendOnPreparingStage (nodeWithStatements: TNodeWithStatements, callsGraphData: ICallsGraphData[]): void {
         if (!this.options.debugProtection) {
             return;
         }
@@ -84,13 +79,11 @@ export class DebugProtectionCodeHelperGroup extends AbstractCustomCodeHelperGrou
             .getLexicalScope(debugProtectionFunctionCallHostNode) ?? null;
 
         const debugProtectionFunctionName: string = debugProtectionFunctionCallScopeNode
-            && NodeGuards.isProgramNode(debugProtectionFunctionCallScopeNode)
             ? this.identifierNamesGenerator.generate(debugProtectionFunctionCallScopeNode)
-            : this.randomGenerator.getRandomString(5);
+            : this.identifierNamesGenerator.generateNext();
         const callsControllerFunctionName: string = debugProtectionFunctionCallScopeNode
-            && NodeGuards.isProgramNode(debugProtectionFunctionCallScopeNode)
             ? this.identifierNamesGenerator.generate(debugProtectionFunctionCallScopeNode)
-            : this.randomGenerator.getRandomString(5);
+            : this.identifierNamesGenerator.generateNext();
 
         // debugProtectionFunctionCall helper nodes append
         this.appendCustomNodeIfExist(
@@ -106,7 +99,7 @@ export class DebugProtectionCodeHelperGroup extends AbstractCustomCodeHelperGrou
         this.appendCustomNodeIfExist(
             CustomCodeHelper.CallsControllerFunction,
             (customCodeHelper: ICustomCodeHelper<TInitialData<CallsControllerFunctionCodeHelper>>) => {
-                customCodeHelper.initialize(this.appendEvent, callsControllerFunctionName);
+                customCodeHelper.initialize(NodeTransformationStage.Preparing, callsControllerFunctionName);
 
                 NodeAppender.prepend(callsControllerHostNode, customCodeHelper.getNode());
             }

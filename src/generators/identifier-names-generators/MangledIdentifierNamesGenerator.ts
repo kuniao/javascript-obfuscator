@@ -6,6 +6,10 @@ import { TNodeWithLexicalScope } from '../../types/node/TNodeWithLexicalScope';
 import { IOptions } from '../../interfaces/options/IOptions';
 import { IRandomGenerator } from '../../interfaces/utils/IRandomGenerator';
 
+import { numbersString } from '../../constants/NumbersString';
+import { alphabetString } from '../../constants/AlphabetString';
+import { alphabetStringUppercase } from '../../constants/AlphabetStringUppercase';
+
 import { AbstractIdentifierNamesGenerator } from './AbstractIdentifierNamesGenerator';
 import { NodeLexicalScopeUtils } from '../../node/NodeLexicalScopeUtils';
 
@@ -17,14 +21,16 @@ export class MangledIdentifierNamesGenerator extends AbstractIdentifierNamesGene
     private static readonly initMangledNameCharacter: string = '9';
 
     /**
-     * @type {Map<TNodeWithLexicalScope, string>}
+     * @type {WeakMap<TNodeWithLexicalScope, string>}
      */
-    private static readonly lastMangledNameInScopeMap: Map <TNodeWithLexicalScope, string> = new Map();
+    private static readonly lastMangledNameInScopeMap: WeakMap <TNodeWithLexicalScope, string> = new WeakMap();
 
     /**
      * @type {string[]}
      */
-    private static readonly nameSequence: string[] = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+    private static readonly nameSequence: string[] = [
+        ...`${numbersString}${alphabetString}${alphabetStringUppercase}`
+    ];
 
     /**
      * Reserved JS words with length of 2-4 symbols that can be possible generated with this replacer
@@ -54,14 +60,16 @@ export class MangledIdentifierNamesGenerator extends AbstractIdentifierNamesGene
     }
 
     /**
-     * We can only ignore limited nameLength, it has no sense here
+     * Generates next name based on a global previous mangled name
+     * We can ignore nameLength parameter here, it hasn't sense with this generator
+     *
      * @param {number} nameLength
      * @returns {string}
      */
     public generateNext (nameLength?: number): string {
         const identifierName: string = this.generateNewMangledName(this.previousMangledName);
 
-        this.previousMangledName = identifierName;
+        this.updatePreviousMangledName(identifierName);
         this.preserveName(identifierName);
 
         return identifierName;
@@ -78,7 +86,7 @@ export class MangledIdentifierNamesGenerator extends AbstractIdentifierNamesGene
         const identifierName: string = this.generateNewMangledName(this.previousMangledName);
         const identifierNameWithPrefix: string = `${prefix}${identifierName}`;
 
-        this.previousMangledName = identifierName;
+        this.updatePreviousMangledName(identifierName);
 
         if (!this.isValidIdentifierName(identifierNameWithPrefix)) {
             return this.generateForGlobalScope(nameLength);
@@ -110,9 +118,47 @@ export class MangledIdentifierNamesGenerator extends AbstractIdentifierNamesGene
 
         MangledIdentifierNamesGenerator.lastMangledNameInScopeMap.set(lexicalScopeNode, identifierName);
 
+        this.updatePreviousMangledName(identifierName);
         this.preserveNameForLexicalScope(identifierName, lexicalScopeNode);
 
         return identifierName;
+    }
+
+    /**
+     * @param {string} nextName
+     * @param {string} prevName
+     * @returns {boolean}
+     */
+    // eslint-disable-next-line complexity
+    public isIncrementedMangledName (nextName: string, prevName: string): boolean {
+        if (nextName === prevName) {
+            return false;
+        }
+
+        const nextNameLength: number = nextName.length;
+        const prevNameLength: number = prevName.length;
+
+        if (nextNameLength !== prevNameLength) {
+            return nextNameLength > prevNameLength;
+        }
+
+        const nameSequence: string[] = this.getNameSequence();
+
+        for (let i: number = 0; i < nextNameLength; i++) {
+            const nextNameCharacter: string = nextName[i];
+            const prevNameCharacter: string = prevName[i];
+
+            if (nextNameCharacter === prevNameCharacter) {
+                continue;
+            }
+
+            const indexOfNextNameCharacter: number = nameSequence.indexOf(nextNameCharacter);
+            const indexOfPrevNameCharacter: number = nameSequence.indexOf(prevNameCharacter);
+
+            return indexOfNextNameCharacter > indexOfPrevNameCharacter;
+        }
+
+        throw new Error('Something goes wrong during comparison of mangled names');
     }
 
     /**
@@ -125,12 +171,30 @@ export class MangledIdentifierNamesGenerator extends AbstractIdentifierNamesGene
     }
 
     /**
+     * @returns {string[]}
+     */
+    protected getNameSequence (): string[] {
+        return MangledIdentifierNamesGenerator.nameSequence;
+    }
+
+    /**
+     * @param {string} name
+     */
+    protected updatePreviousMangledName (name: string): void {
+        if (!this.isIncrementedMangledName(name, this.previousMangledName)) {
+            return;
+        }
+
+        this.previousMangledName = name;
+    }
+
+    /**
      * @param {string} previousMangledName
      * @returns {string}
      */
-    private generateNewMangledName (previousMangledName: string): string {
+    protected generateNewMangledName (previousMangledName: string): string {
         const generateNewMangledName: (name: string) => string = (name: string): string => {
-            const nameSequence: string[] = MangledIdentifierNamesGenerator.nameSequence;
+            const nameSequence: string[] = this.getNameSequence();
             const nameSequenceLength: number = nameSequence.length;
             const nameLength: number = name.length;
 
@@ -146,7 +210,7 @@ export class MangledIdentifierNamesGenerator extends AbstractIdentifierNamesGene
                 const lastNameSequenceIndex: number = nameSequenceLength - 1;
 
                 if (indexInSequence !== lastNameSequenceIndex) {
-                    const previousNamePart: string = name.substring(0, index);
+                    const previousNamePart: string = name.slice(0, index);
                     const nextCharacter: string = nameSequence[indexInSequence + 1];
                     const zeroSequenceLength: number = nameLength - (index + 1);
                     const zeroSequenceCharacters: string = zeroSequence(zeroSequenceLength);
@@ -157,7 +221,9 @@ export class MangledIdentifierNamesGenerator extends AbstractIdentifierNamesGene
                 --index;
             } while (index >= 0);
 
-            return `a${zeroSequence(nameLength)}`;
+            const firstLetterCharacter: string = nameSequence[numbersString.length];
+
+            return `${firstLetterCharacter}${zeroSequence(nameLength)}`;
         };
 
         let newMangledName: string = generateNewMangledName(previousMangledName);

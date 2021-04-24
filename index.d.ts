@@ -1,8 +1,9 @@
+import { TDictionary } from './src/types/TDictionary';
 import { TInputOptions } from './src/types/options/TInputOptions';
-import { TObject } from './src/types/TObject';
+import { TObfuscationResultsObject } from './src/types/TObfuscationResultsObject';
+import { TOptionsPreset } from './src/types/options/TOptionsPreset';
 
 import { IObfuscatedCode } from './src/interfaces/source-code/IObfuscatedCode';
-import { TObfuscationResultsObject } from './src/types/TObfuscationResultsObject';
 
 export type ObfuscatorOptions = TInputOptions;
 
@@ -20,10 +21,16 @@ export function obfuscate (sourceCode: string, inputOptions?: ObfuscatorOptions)
  * @param {TInputOptions} inputOptions
  * @returns {TObfuscationResultsObject<TSourceCodesObject>}
  */
-export function obfuscateMultiple <TSourceCodesObject extends TObject<string>> (
+export function obfuscateMultiple <TSourceCodesObject extends TDictionary<string>> (
     sourceCodesObject: TSourceCodesObject,
     inputOptions?: TInputOptions
 ): TObfuscationResultsObject<TSourceCodesObject>;
+
+/**
+ * @param {TOptionsPreset} optionsPreset
+ * @returns {TInputOptions}
+ */
+export function getOptionsByPreset (optionsPreset: TOptionsPreset): TInputOptions;
 
 /**
  * @type {string}

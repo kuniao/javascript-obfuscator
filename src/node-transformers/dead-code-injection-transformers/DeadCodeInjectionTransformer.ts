@@ -48,7 +48,8 @@ export class DeadCodeInjectionTransformer extends AbstractNodeTransformer {
      */
     private static readonly transformersToRenameBlockScopeIdentifiers: NodeTransformer[] = [
         NodeTransformer.LabeledStatementTransformer,
-        NodeTransformer.ScopeIdentifiersTransformer
+        NodeTransformer.ScopeIdentifiersTransformer,
+        NodeTransformer.ScopeThroughIdentifiersTransformer
     ];
 
     /**
@@ -100,10 +101,13 @@ export class DeadCodeInjectionTransformer extends AbstractNodeTransformer {
      * @returns {boolean}
      */
     private static isProhibitedNodeInsideCollectedBlockStatement (targetNode: ESTree.Node): boolean {
-        return NodeGuards.isBreakStatementNode(targetNode)
+        return NodeGuards.isFunctionDeclarationNode(targetNode) // can break code on strict mode
+            || NodeGuards.isBreakStatementNode(targetNode)
             || NodeGuards.isContinueStatementNode(targetNode)
             || NodeGuards.isAwaitExpressionNode(targetNode)
-            || NodeGuards.isSuperNode(targetNode);
+            || NodeGuards.isYieldExpressionNode(targetNode)
+            || NodeGuards.isSuperNode(targetNode)
+            || (NodeGuards.isForOfStatementNode(targetNode) && targetNode.await);
     }
 
     /**
@@ -218,7 +222,7 @@ export class DeadCodeInjectionTransformer extends AbstractNodeTransformer {
                 return {
                     enter: (node: ESTree.Node, parentNode: ESTree.Node | null): ESTree.Node | undefined => {
                         if (parentNode && NodeGuards.isProgramNode(node)) {
-                            this.analyzeNode(node, parentNode);
+                            this.prepareNode(node, parentNode);
 
                             return node;
                         }
@@ -258,7 +262,7 @@ export class DeadCodeInjectionTransformer extends AbstractNodeTransformer {
      * @param {NodeGuards} programNode
      * @param {NodeGuards} parentNode
      */
-    public analyzeNode (programNode: ESTree.Node, parentNode: ESTree.Node): void {
+    public prepareNode (programNode: ESTree.Node, parentNode: ESTree.Node): void {
         estraverse.traverse(programNode, {
             enter: (node: ESTree.Node): void => {
                 if (!NodeGuards.isBlockStatementNode(node)) {
@@ -363,7 +367,7 @@ export class DeadCodeInjectionTransformer extends AbstractNodeTransformer {
         this.transformersRunner.transform(
             hostNode,
             DeadCodeInjectionTransformer.transformersToRenameBlockScopeIdentifiers,
-            NodeTransformationStage.Obfuscating
+            NodeTransformationStage.RenameIdentifiers
         );
 
         return clonedBlockStatementNode;

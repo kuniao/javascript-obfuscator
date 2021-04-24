@@ -7,13 +7,24 @@ import { NO_ADDITIONAL_NODES_PRESET } from '../../src/options/presets/NoCustomNo
 
     let obfuscatedCode: string = JavaScriptObfuscator.obfuscate(
         `
-            var foo = 10n;
+            var variable1 = '5' - 3;
+            var variable2 = '5' + 3;
+            var variable3 = '5' + - '2';
+            var variable4 = ['10','10','10','10','10'].map(parseInt);
+            var variable5 = 'foo ' + 1 + 1;
+            console.log(variable1);
+            console.log(variable2);
+            console.log(variable3);
+            console.log(variable4);
+            console.log(variable5);
         `,
         {
             ...NO_ADDITIONAL_NODES_PRESET,
-            renameGlobals: true,
+            compact: false,
             stringArray: true,
-            stringArrayThreshold: 1
+            stringArrayThreshold: 1,
+            rotateStringArray: true,
+            stringArrayWrappersCount: 3
         }
     ).getObfuscatedCode();
 

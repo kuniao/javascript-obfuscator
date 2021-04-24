@@ -3,14 +3,16 @@ import { assert } from 'chai';
 import { NO_ADDITIONAL_NODES_PRESET } from '../../../../../src/options/presets/NoCustomNodes';
 
 import { readFileAsString } from '../../../../helpers/readFileAsString';
+import { stubNodeTransformers } from '../../../../helpers/stubNodeTransformers';
 
 import { JavaScriptObfuscator } from '../../../../../src/JavaScriptObfuscatorFacade';
+import { ObjectPatternPropertiesTransformer } from '../../../../../src/node-transformers/converting-transformers/ObjectPatternPropertiesTransformer';
 
 describe('VariablePreserveTransformer', () => {
     describe('Variant #1: string array storage name conflicts with identifier name', () => {
         describe('Variant #1: `renameGlobals` option is disabled', () => {
             const stringArrayStorageNameRegExp: RegExp = /const b *= *\['abc'];/;
-            const identifierNameRegExp: RegExp = /const a *= *c\('0x0'\);/;
+            const identifierNameRegExp: RegExp = /const a *= *c\(0x0\);/;
 
             let obfuscatedCode: string;
 
@@ -39,7 +41,7 @@ describe('VariablePreserveTransformer', () => {
 
         describe('Variant #2: `renameGlobals` option is enabled', () => {
             const stringArrayStorageNameRegExp: RegExp = /const b *= *\['abc'];/;
-            const identifierNameRegExp: RegExp = /const d *= *c\('0x0'\);/;
+            const identifierNameRegExp: RegExp = /const d *= *c\(0x0\);/;
 
             let obfuscatedCode: string;
 
@@ -158,6 +160,8 @@ describe('VariablePreserveTransformer', () => {
     });
 
     describe('Variant #4: destructed object property identifier name conflict with identifier name', () => {
+        stubNodeTransformers([ObjectPatternPropertiesTransformer]);
+
         describe('Variant #1: `renameGlobals` option is disabled', () => {
             const variableDeclarationIdentifierName: RegExp = /var b *= *0x1;/;
             const destructedObjectPropertyIdentifierName: RegExp = /const { *a *} *= *{ *'a' *: *0x2 *};/;

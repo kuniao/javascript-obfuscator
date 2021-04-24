@@ -131,6 +131,7 @@ module.exports = {
         "@typescript-eslint/no-param-reassign": "off",
         "@typescript-eslint/no-parameter-properties": "error",
         "@typescript-eslint/no-require-imports": "off",
+        "@typescript-eslint/no-shadow": "error",
         "@typescript-eslint/no-this-alias": "error",
         "@typescript-eslint/no-unnecessary-qualifier": "error",
         "@typescript-eslint/no-unnecessary-type-arguments": "error",
@@ -189,15 +190,22 @@ module.exports = {
         "guard-for-in": "error",
         "id-blacklist": "off",
         "id-match": "off",
+        "import/export": "error",
+        "import/first": "error",
+        "import/newline-after-import": "error",
+        "import/no-absolute-path": "error",
+        "import/no-cycle": "error",
         "import/no-default-export": "error",
         "import/no-deprecated": "error",
         "import/no-extraneous-dependencies": "error",
         "import/no-internal-modules": "error",
+        "import/no-mutable-exports": "error",
         "import/no-unassigned-import": "off",
+        "import/no-useless-path-segments": "error",
         "import/order": "off",
         "indent": "off",
         "jsdoc/no-types": "off",
-        "linebreak-style": "error",
+        "linebreak-style": "off",
         "max-classes-per-file": [
             "error",
             1
@@ -267,12 +275,7 @@ module.exports = {
         ],
         "no-return-await": "error",
         "no-sequences": "error",
-        "no-shadow": [
-            "error",
-            {
-                "hoist": "all"
-            }
-        ],
+        "no-shadow": "off",
         "no-sparse-arrays": "error",
         "no-template-curly-in-string": "error",
         "no-throw-literal": "error",
@@ -324,12 +327,24 @@ module.exports = {
                 "name": "error"
             }
         ],
-        "unicorn/no-array-instanceof": "error",
         "unicorn/no-nested-ternary": "error",
         "unicorn/no-unreadable-array-destructuring": "error",
+        "unicorn/numeric-separators-style": [
+            "error",
+            {
+                number: {
+                    minimumDigits: 7,
+                    groupLength: 3
+                }
+            }
+        ],
+        "unicorn/prefer-array-find": "error",
         "unicorn/prefer-includes": "error",
+        "unicorn/prefer-optional-catch-binding": "error",
         "unicorn/prefer-starts-ends-with": "error",
-        "unicorn/prefer-trim-start-end": "error",
+        "unicorn/prefer-set-has": "error",
+        "unicorn/prefer-string-slice": "error",
+        "unicorn/prefer-string-trim-start-end": "error",
         "use-isnan": "error",
         "valid-typeof": "error",
         "yoda": "error"

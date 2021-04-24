@@ -1,4 +1,4 @@
-import * as escodegen from 'escodegen';
+import * as escodegen from '@javascript-obfuscator/escodegen';
 import * as estraverse from 'estraverse';
 import * as ESTree from 'estree';
 
@@ -131,13 +131,13 @@ export class NodeUtils {
                     return;
                 }
 
-                const value: T[keyof T] = node[property];
+                const value: T[keyof T] | T[keyof T][] | null = node[property] ?? null;
 
                 let clonedValue: T[keyof T] | T[keyof T][] | null;
 
                 if (value === null || value instanceof RegExp) {
                     clonedValue = value;
-                } else if (Array.isArray(value)) {
+                } else if (value instanceof Array) {
                     clonedValue = value.map(NodeUtils.cloneRecursive);
                 } else if (typeof value === 'object') {
                     clonedValue = NodeUtils.cloneRecursive(value);

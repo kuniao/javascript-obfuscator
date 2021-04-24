@@ -2,7 +2,7 @@ import { inject, injectable, } from 'inversify';
 import { ServiceIdentifiers } from './container/ServiceIdentifiers';
 
 import * as acorn from 'acorn';
-import * as escodegen from 'escodegen';
+import * as escodegen from '@javascript-obfuscator/escodegen';
 import * as ESTree from 'estree';
 
 import { TObfuscatedCodeFactory } from './types/container/source-code/TObfuscatedCodeFactory';
@@ -62,24 +62,38 @@ export class JavaScriptObfuscator implements IJavaScriptObfuscator {
      * @type {NodeTransformer[]}
      */
     private static readonly nodeTransformersList: NodeTransformer[] = [
+        NodeTransformer.BooleanLiteralTransformer,
         NodeTransformer.BlockStatementControlFlowTransformer,
+        NodeTransformer.BlockStatementSimplifyTransformer,
         NodeTransformer.CommentsTransformer,
         NodeTransformer.CustomCodeHelpersTransformer,
         NodeTransformer.DeadCodeInjectionTransformer,
+        NodeTransformer.EscapeSequenceTransformer,
         NodeTransformer.EvalCallExpressionTransformer,
+        NodeTransformer.ExportSpecifierTransformer,
+        NodeTransformer.ExpressionStatementsMergeTransformer,
         NodeTransformer.FunctionControlFlowTransformer,
+        NodeTransformer.IfStatementSimplifyTransformer,
         NodeTransformer.LabeledStatementTransformer,
-        NodeTransformer.LiteralTransformer,
+        NodeTransformer.RenamePropertiesTransformer,
         NodeTransformer.MemberExpressionTransformer,
         NodeTransformer.MetadataTransformer,
         NodeTransformer.MethodDefinitionTransformer,
+        NodeTransformer.NumberLiteralTransformer,
+        NodeTransformer.NumberToNumericalExpressionTransformer,
         NodeTransformer.ObfuscatingGuardsTransformer,
         NodeTransformer.ObjectExpressionKeysTransformer,
         NodeTransformer.ObjectExpressionTransformer,
+        NodeTransformer.ObjectPatternPropertiesTransformer,
         NodeTransformer.ParentificationTransformer,
         NodeTransformer.ScopeIdentifiersTransformer,
         NodeTransformer.SplitStringTransformer,
+        NodeTransformer.StringArrayRotateFunctionTransformer,
+        NodeTransformer.StringArrayScopeCallsWrapperTransformer,
+        NodeTransformer.StringArrayTransformer,
         NodeTransformer.TemplateLiteralTransformer,
+        NodeTransformer.DirectivePlacementTransformer,
+        NodeTransformer.VariableDeclarationsMergeTransformer,
         NodeTransformer.VariablePreserveTransformer
     ];
 
@@ -208,8 +222,18 @@ export class JavaScriptObfuscator implements IJavaScriptObfuscator {
             astTree = this.runNodeTransformationStage(astTree, NodeTransformationStage.ControlFlowFlattening);
         }
 
+        if (this.options.renameProperties) {
+            astTree = this.runNodeTransformationStage(astTree, NodeTransformationStage.RenameProperties);
+        }
+
         astTree = this.runNodeTransformationStage(astTree, NodeTransformationStage.Converting);
-        astTree = this.runNodeTransformationStage(astTree, NodeTransformationStage.Obfuscating);
+        astTree = this.runNodeTransformationStage(astTree, NodeTransformationStage.RenameIdentifiers);
+        astTree = this.runNodeTransformationStage(astTree, NodeTransformationStage.StringArray);
+
+        if (this.options.simplify) {
+            astTree = this.runNodeTransformationStage(astTree, NodeTransformationStage.Simplifying);
+        }
+
         astTree = this.runNodeTransformationStage(astTree, NodeTransformationStage.Finalizing);
 
         return astTree;

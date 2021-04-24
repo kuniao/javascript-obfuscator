@@ -2,8 +2,11 @@ import { assert } from 'chai';
 
 import { TInputOptions } from '../../src/types/options/TInputOptions';
 
-import { StringArrayEncoding } from '../../src/enums/StringArrayEncoding';
 import { IdentifierNamesGenerator } from '../../src/enums/generators/identifier-names-generators/IdentifierNamesGenerator';
+import { RenamePropertiesMode } from '../../src/enums/node-transformers/rename-properties-transformers/RenamePropertiesMode';
+import { StringArrayEncoding } from '../../src/enums/node-transformers/string-array-transformers/StringArrayEncoding';
+import { StringArrayIndexesType } from '../../src/enums/node-transformers/string-array-transformers/StringArrayIndexesType';
+import { StringArrayWrappersType } from '../../src/enums/node-transformers/string-array-transformers/StringArrayWrappersType';
 
 import { evaluateInWorker } from '../helpers/evaluateInWorker';
 import { readFileAsString } from '../helpers/readFileAsString';
@@ -25,13 +28,30 @@ describe('JavaScriptObfuscator runtime eval', function () {
         debugProtection: true,
         disableConsoleOutput: true,
         domainLock: ['obfuscator.io'],
-        reservedNames: ['generate', 'sha256'],
+        log: true,
+        numbersToExpressions: true,
+        simplify: true,
+        renameProperties: true,
+        renamePropertiesMode: RenamePropertiesMode.Unsafe,
         rotateStringArray: true,
         selfDefending: true,
         splitStrings: true,
-        splitStringsChunkLength: 5,
+        splitStringsChunkLength: 3,
         stringArray: true,
-        stringArrayEncoding: StringArrayEncoding.Rc4,
+        stringArrayEncoding: [
+            StringArrayEncoding.None,
+            StringArrayEncoding.Base64,
+            StringArrayEncoding.Rc4
+        ],
+        stringArrayIndexesType: [
+            StringArrayIndexesType.HexadecimalNumber,
+            StringArrayIndexesType.HexadecimalNumericString
+        ],
+        stringArrayIndexShift: true,
+        stringArrayWrappersChainedCalls: true,
+        stringArrayWrappersCount: 5,
+        stringArrayWrappersParametersMaxCount: 5,
+        stringArrayWrappersType: StringArrayWrappersType.Function,
         stringArrayThreshold: 1,
         transformObjectKeys: true,
         unicodeEscapeSequence: true
@@ -39,7 +59,7 @@ describe('JavaScriptObfuscator runtime eval', function () {
 
     this.timeout(200000);
 
-    [
+    const options: Partial<TInputOptions>[] = [
         {
             identifierNamesGenerator: IdentifierNamesGenerator.HexadecimalIdentifierNamesGenerator,
             renameGlobals: false
@@ -54,9 +74,19 @@ describe('JavaScriptObfuscator runtime eval', function () {
         },
         {
             identifierNamesGenerator: IdentifierNamesGenerator.MangledIdentifierNamesGenerator,
+            renameGlobals: true
+        },
+        {
+            identifierNamesGenerator: IdentifierNamesGenerator.MangledShuffledIdentifierNamesGenerator,
+            renameGlobals: false
+        },
+        {
+            identifierNamesGenerator: IdentifierNamesGenerator.MangledShuffledIdentifierNamesGenerator,
             renameGlobals: true
         }
-    ].forEach((options: Partial<TInputOptions>) => {
+    ];
+
+    options.forEach((options: Partial<TInputOptions>) => {
         const detailedDescription: string = `Identifier names generator: ${options.identifierNamesGenerator}, rename globals: ${options.renameGlobals?.toString()}`;
 
         describe(`Astring. ${detailedDescription}`, () => {
@@ -64,77 +94,79 @@ describe('JavaScriptObfuscator runtime eval', function () {
                 const code: string = readFileAsString(__dirname + '/fixtures/astring.js');
 
                 const obfuscatedCode: string = JavaScriptObfuscator.obfuscate(
-                    code,
+                    `
+                    ${getEnvironmentCode()}
+                    ${code}
+                    const code = generate({
+                        "type": "Program",
+                        "body": [
+                            {
+                                "type": "FunctionDeclaration",
+                                "id": {
+                                    "type": "Identifier",
+                                    "name": "test",
+                                    "range": [
+                                        9,
+                                        13
+                                    ]
+                                },
+                                "params": [],
+                                "body": {
+                                    "type": "BlockStatement",
+                                    "body": [
+                                        {
+                                            "type": "ReturnStatement",
+                                            "argument": {
+                                                "type": "Literal",
+                                                "value": "foo",
+                                                "raw": "'foo'",
+                                                "range": [
+                                                    30,
+                                                    35
+                                                ]
+                                            },
+                                            "range": [
+                                                23,
+                                                36
+                                            ]
+                                        }
+                                    ],
+                                    "range": [
+                                        17,
+                                        38
+                                    ]
+                                },
+                                "generator": false,
+                                "expression": false,
+                                "async": false,
+                                "range": [
+                                    0,
+                                    38
+                                ]
+                            }
+                        ],
+                        "sourceType": "module",
+                        "range": [
+                            0,
+                            38
+                        ],
+                        "comments": []
+                    });
+                    
+                    eval(\`\${code} test();\`);
+                    `,
                     {
                         ...baseOptions,
-                        ...options
+                        ...options,
+                        renamePropertiesMode: RenamePropertiesMode.Safe,
+                        reservedNames: ['generate']
                     }
                 ).getObfuscatedCode();
 
                 let evaluationResult: string;
 
                 try {
-                    evaluationResult = eval(`
-                        ${getEnvironmentCode()}
-                        ${obfuscatedCode}
-                        const code = generate({
-                            "type": "Program",
-                            "body": [
-                                {
-                                    "type": "FunctionDeclaration",
-                                    "id": {
-                                        "type": "Identifier",
-                                        "name": "test",
-                                        "range": [
-                                            9,
-                                            13
-                                        ]
-                                    },
-                                    "params": [],
-                                    "body": {
-                                        "type": "BlockStatement",
-                                        "body": [
-                                            {
-                                                "type": "ReturnStatement",
-                                                "argument": {
-                                                    "type": "Literal",
-                                                    "value": "foo",
-                                                    "raw": "'foo'",
-                                                    "range": [
-                                                        30,
-                                                        35
-                                                    ]
-                                                },
-                                                "range": [
-                                                    23,
-                                                    36
-                                                ]
-                                            }
-                                        ],
-                                        "range": [
-                                            17,
-                                            38
-                                        ]
-                                    },
-                                    "generator": false,
-                                    "expression": false,
-                                    "async": false,
-                                    "range": [
-                                        0,
-                                        38
-                                    ]
-                                }
-                            ],
-                            "sourceType": "module",
-                            "range": [
-                                0,
-                                38
-                            ],
-                            "comments": []
-                        });
-                        
-                        eval(\`\${code} test();\`);
-                    `)
+                    evaluationResult = eval(obfuscatedCode)
                 } catch (e) {
                     throw new Error(`Evaluation error: ${e.message}. Code: ${obfuscatedCode}`);
                 }
@@ -148,26 +180,27 @@ describe('JavaScriptObfuscator runtime eval', function () {
                 const code: string = readFileAsString(__dirname + '/fixtures/sha256.js');
 
                 const obfuscatedCode: string = JavaScriptObfuscator.obfuscate(
-                    code,
+                    `
+                    ${getEnvironmentCode()}
+                    ${code}
+                    sha256('test');
+                    `,
                     {
                         ...baseOptions,
-                        ...options
+                        ...options,
+                        reservedNames: ['sha256']
                     }
                 ).getObfuscatedCode();
 
                 assert.equal(
-                    eval(`
-                        ${getEnvironmentCode()}
-                        ${obfuscatedCode}
-                        sha256('test');
-                    `),
+                    eval(obfuscatedCode),
                     '9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08'
                 );
             });
         });
 
         describe(`Obfuscator. ${detailedDescription}`, () => {
-            const evaluationTimeout: number = 10000;
+            const evaluationTimeout: number = 50000;
 
             let evaluationResult: string;
 
@@ -178,7 +211,8 @@ describe('JavaScriptObfuscator runtime eval', function () {
                     code,
                     {
                         ...baseOptions,
-                        ...options
+                        ...options,
+                        renameProperties: false
                     }
                 ).getObfuscatedCode();
 
@@ -198,7 +232,7 @@ describe('JavaScriptObfuscator runtime eval', function () {
                         evaluationResult = result;
                     })
                     .catch((error: Error) => {
-                        evaluationResult = `${error.message}. ${error.stack}`;
+                        evaluationResult = `${error.message}. ${error.stack}. Code: ${obfuscatedCode}`;
                     });
             });
 
@@ -248,14 +282,19 @@ describe('JavaScriptObfuscator runtime eval', function () {
                         {
                             ...baseOptions,
                             ...options,
-                            ...webpackBootstrapOptions
+                            ...webpackBootstrapOptions,
+                            reservedNames: ['^foo$']
                         }
                     ).getObfuscatedCode();
 
-                    evaluationResult = eval(`
-                        ${getEnvironmentCode()}
-                        ${obfuscatedCode}
-                    `);
+                    try {
+                        evaluationResult = eval(`
+                            ${getEnvironmentCode()}
+                            ${obfuscatedCode}
+                        `);
+                    } catch (e) {
+                        throw new Error(`Evaluation error: ${e.message}. Code: ${obfuscatedCode}`);
+                    }
                 });
 
                 it('should obfuscate code without any runtime errors after obfuscation: Variant #4 webpack bootstrap', () => {

@@ -1,7 +1,7 @@
 import { assert } from 'chai';
 
 import { IdentifierNamesGenerator } from '../../../../src/enums/generators/identifier-names-generators/IdentifierNamesGenerator';
-import { StringArrayEncoding } from '../../../../src/enums/StringArrayEncoding';
+import { StringArrayEncoding } from '../../../../src/enums/node-transformers/string-array-transformers/StringArrayEncoding';
 
 import { NO_ADDITIONAL_NODES_PRESET } from '../../../../src/options/presets/NoCustomNodes';
 
@@ -55,7 +55,7 @@ describe('StringArrayCallsWrapperCodeHelper', () => {
 
     describe('Preserve string array name', () => {
         const callsWrapperRegExp: RegExp = new RegExp(`` +
-            `var b *= *function *\\(c, *d\\) *{ *` +
+            `function *b *\\(c, *d\\) *{ *` +
             `c *= *c *- *0x0; *` +
             `var e *= *a\\[c]; *` +
         ``);
@@ -72,7 +72,7 @@ describe('StringArrayCallsWrapperCodeHelper', () => {
                     identifierNamesGenerator: IdentifierNamesGenerator.MangledIdentifierNamesGenerator,
                     stringArray: true,
                     stringArrayThreshold: 1,
-                    stringArrayEncoding: StringArrayEncoding.Base64
+                    stringArrayEncoding: [StringArrayEncoding.Base64]
                 }
             ).getObfuscatedCode();
         });

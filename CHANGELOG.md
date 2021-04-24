@@ -1,5 +1,287 @@
 Change Log
 
+v2.13.0
+---
+* **Internal**: Added support of `node@16` and dropped support of `node@10`. This should not affect obfuscated code
+
+v2.12.0
+---
+* `stringArray` calls wrappers now inserted as `FunctionDeclaration` nodes at random indexes
+
+v2.11.1
+---
+* **CLI**: now it's possible to specify the path to the input file after specifying the obfuscator options. Fixed https://github.com/javascript-obfuscator/javascript-obfuscator/issues/904 
+
+v2.11.0
+---
+* Added option `renamePropertiesMode` to switch between new `safe` and old `unsafe` modes of `renameProperties` option. Fixed https://github.com/javascript-obfuscator/javascript-obfuscator/issues/878
+* `renameProperties` option now works in `safe` way by default
+
+v2.10.7
+---
+* Fixed CVE-2019-18413. Fixed https://github.com/javascript-obfuscator/javascript-obfuscator/issues/880
+
+v2.10.6
+---
+* Added support of `top-level await`. Fixed https://github.com/javascript-obfuscator/javascript-obfuscator/issues/884
+
+v2.10.5
+---
+* Fixed invalid code generation for rest arguments when `controlFlowFlattening` option is enabled. Fixed https://github.com/javascript-obfuscator/javascript-obfuscator/issues/887
+
+v2.10.4
+---
+* Fixed invalid behaviour of `numbersToExpressions` option for float numbers. Fixed https://github.com/javascript-obfuscator/javascript-obfuscator/issues/882
+
+v2.10.3
+---
+* Fixed `simplify` option regression after `2.10.2`. Fixed https://github.com/javascript-obfuscator/javascript-obfuscator/issues/864
+
+v2.10.2
+---
+* Fixed behavior of `simplify` options when a node with a single-statement `body` is inside simplified `IfStatement` node. Fixed https://github.com/javascript-obfuscator/javascript-obfuscator/issues/860
+
+v2.10.1
+---
+* Removed padding characters from all base64 encoded strings. Removed RegExp that trims padding characters from `base64` encoded strings from `atob` code helper to prevent mutation of `RegExp.$1` value during calls to the `stringArray`. Fixed https://github.com/javascript-obfuscator/javascript-obfuscator/issues/829
+
+v2.10.0
+---
+* Improved `rotateStringArray` option
+
+v2.9.6
+---
+* Preventing move of `"use strict";` directive during obfuscation
+
+v2.9.5
+---
+* Fixed runtime errors in large obfuscated code when both `rc4` and `base64` encodings are enabled
+* Some internal refactoring related to node append events
+
+v2.9.4
+---
+* Fixed missing prefix of root identifiers added by `stringArrayWrappersCount` option when `identifiersPrefix` option is set
+
+v2.9.3
+---
+* **CLI**: Fixed wrong name of obfuscated files when input directory path is the `.` symbol. https://github.com/javascript-obfuscator/javascript-obfuscator/issues/816
+
+v2.9.2
+---
+* Ignore object expressions as body of arrow function expression when `transformObjectKeys` option is enabled. Fixed https://github.com/javascript-obfuscator/javascript-obfuscator/issues/813
+
+v2.9.1
+---
+* Fixed wrong `stringArrayWrappersParametersMaxCount` CLI option name
+
+v2.9.0
+---
+* New option: `stringArrayIndexesType` accepts an array of types of string array call indexes
+* Changed default type of all string array call indexes from `hexadecimal-numeric-string` to `hexadecimal-number`
+* New option: `stringArrayIndexShift` enables additional index shift for all string array calls
+* New option: ``stringArrayWrappersParametersMaxCount`` allows to control the maximum number of string array wrappers parameters
+* `stringArrayWrappersType: 'function'` option value moved from `high-obfuscation` to `medium-obfuscation` options preset
+
+v2.8.1
+---
+* Fixed incorrect rename of the identifiers of the added helpers in some rare cases. Fixed https://github.com/javascript-obfuscator/javascript-obfuscator/issues/804
+
+v2.8.0
+---
+* New option `ignoreRequireImports` prevents obfuscation of `require` imports. Fixed https://github.com/javascript-obfuscator/javascript-obfuscator/issues/801
+
+v2.7.1
+---
+* Updated `@javascript-obfuscator/escodegen` to `2.1.1`
+
+v2.7.0
+---
+* Switched form `escodegen` to `@javascript-obfuscator/escodegen`
+* Full support of `nullish-coalescing`. Fixed https://github.com/javascript-obfuscator/javascript-obfuscator/issues/604
+* Support for `exported` field of `ExportAllDeclaration` node. Fixed https://github.com/javascript-obfuscator/javascript-obfuscator/issues/710
+
+v2.6.4
+---
+* Added ignoring of all object members previous to `SpreadElement` when `transformObjectKeys` option is enabled. Fixed https://github.com/javascript-obfuscator/javascript-obfuscator/issues/797
+
+v2.6.3
+---
+* Added `ExportSpecifierTransformer`. Fixed https://github.com/javascript-obfuscator/javascript-obfuscator/issues/791
+
+v2.6.2
+---
+* Fixed installation in `PowerShell`. Fixed https://github.com/javascript-obfuscator/javascript-obfuscator/issues/783
+* Tested under `Node.js@15`
+
+v2.6.1
+---
+* Fixed missing rename of object pattern properties in some cases. Fixed https://github.com/javascript-obfuscator/javascript-obfuscator/issues/781
+
+v2.6.0
+---
+* Migration to `webpack@5`
+* Optimized performance of `ExpressionStatementsMergeTransformer` when `simplify` option is enabled. Fixed https://github.com/javascript-obfuscator/javascript-obfuscator/issues/777
+* Fixed broken `identifierNamesGenerator: 'mangled-shuffled'` after `2.2.0`. Fixed https://github.com/javascript-obfuscator/javascript-obfuscator/issues/778
+
+v2.5.0
+---
+* Improved hierarchy of generated directories when `--output` is a directory path
+* Fixed wrong path generation for obfuscated files for `win32` environment. Fixed https://github.com/javascript-obfuscator/javascript-obfuscator/issues/576
+* Fixed wrong path generation under for source map for `win32` environment. Fixed https://github.com/javascript-obfuscator/javascript-obfuscator/issues/760
+* `javascript-obfuscator` now can be built under `win32` environment
+
+v2.4.3
+---
+* Fixed https://github.com/javascript-obfuscator/javascript-obfuscator/issues/769
+
+v2.4.2
+---
+* Fixed `URI-malformed` when `splitStrings` and `stringArrayEncoding` options are enabled. https://github.com/javascript-obfuscator/javascript-obfuscator/issues/530
+
+v2.4.1
+---
+* Small release with some README.md improvements that allow to use it on [obfuscator.io](https://obfuscator.io)
+
+v2.4.0
+---
+* **New option:** `forceTransformStrings` allows force transform strings even if by `stringArrayThreshold` (or possible other thresholds in the future) they shouldn't be transformed. Implemented https://github.com/javascript-obfuscator/javascript-obfuscator/issues/657
+
+v2.3.1
+---
+* Fixed a rare bug with `identifierNamesGenerator: 'mangled'` option that causes wrong identifier names generation
+
+v2.3.0
+---
+* **New option:** `stringArrayWrappersType` allows to select a type of the wrappers that are appending by the `stringArrayWrappersCount` option
+* Add force convert of unicode control characters to the unicode escape sequence. Fixed https://github.com/javascript-obfuscator/javascript-obfuscator/issues/747
+
+v2.2.1
+---
+* Fixed https://github.com/javascript-obfuscator/javascript-obfuscator/issues/745
+
+v2.2.0
+---
+* **New option (enabled by default):** `stringArrayWrappersCount` sets the count of wrappers for the `string array` inside each root or function scope
+* **New option (enabled by default):** `stringArrayWrappersChainedCalls` enables the chained calls between `string array` wrappers
+
+v2.1.0
+---
+* **New API:** `getOptionsByPreset` allows to get options for the passed options preset name 
+
+v2.0.0
+---
+* **Breaking change:** `stringArrayEncoding` option now accepts an array of encodings. Each string will be randomly encoded with passed encoding
+
+v1.12.1
+---
+* Fixed regression bug with combination of `splitStrings` and `renameProperties` option. https://github.com/javascript-obfuscator/javascript-obfuscator/issues/729
+
+v1.12.0
+---
+* **New option:** `optionsPreset` allows to set options preset
+
+v1.11.0
+---
+* Improved rename of `deadCodeInjection` dead code identifiers. Fixed https://github.com/javascript-obfuscator/javascript-obfuscator/issues/708
+* **Reverted** `TaggedTemplateLiteral` obfuscation. https://github.com/javascript-obfuscator/javascript-obfuscator/issues/716
+
+v1.10.2
+---
+* Fixed obfuscation of literals of `ExportNamedDeclaration` and `ExportAllDeclaration` nodes
+
+v1.10.1
+---
+* Fixed https://github.com/javascript-obfuscator/javascript-obfuscator/issues/707
+
+v1.10.0
+---
+* **Feature:** Optional chaining support!
+* Added `TaggedTemplateLiteral` obfuscation. https://github.com/javascript-obfuscator/javascript-obfuscator/issues/696
+* Improved `disableConsoleOutput` template. https://github.com/javascript-obfuscator/javascript-obfuscator/issues/691
+
+v1.9.0
+---
+* Improved obfuscation of destructured variables. https://github.com/javascript-obfuscator/javascript-obfuscator/issues/688
+
+v1.8.1
+---
+* Fixed runtime error `Uncaught SyntaxError: yield is a reserved identifier` when `deadCodeInjection` is enabled 
+
+v1.8.0
+---
+* `domainLock` option patterns with leading dot character (`.example.com`) now cover root domains (`example.com`) in addition to all sub-domains (`sub.example.com`). https://github.com/javascript-obfuscator/javascript-obfuscator/issues/640
+
+v1.7.0
+---
+* `simplify` option now affects all block statements. Improved variable declarations merging.
+
+v1.6.0
+---
+* **New option:** `numbersToExpressions` enables numbers conversion to expressions
+
+v1.5.2
+---
+* Prevented mutation of the name sequences of `mangled` identifier name generators
+
+v1.5.1
+---
+* Fixed runtime error when `IfStatement` contains only single `let` or `const` variable declaration when `simlify` option enabled. https://github.com/javascript-obfuscator/javascript-obfuscator/issues/661
+* Fixed wrong `source-map: 'inline'` encoding after `1.3.0`
+
+v1.5.0
+---
+* New `mangled-shuffled` identifier names generator based on `mangled` identifier names generator
+
+v1.4.0
+---
+* **New option:** `simplify` enables additional code obfuscation through simplification
+
+v1.3.0
+---
+* Improvements of `stringArrayEncoding`: `base64` and `rc4`
+* **CLI**: added config file extension validation (it still supports `.js` and `.json` extensions)
+* Fixed https://github.com/javascript-obfuscator/javascript-obfuscator/issues/499
+
+v1.2.2
+---
+* Fixed performance regression of `Initializing` stage after `1.2.0`
+
+v1.2.1
+---
+* Support of old browsers when `selfDefending` is enabled. https://github.com/javascript-obfuscator/javascript-obfuscator/issues/615
+
+v1.2.0
+---
+* Conditional comments will be removed from the code after obfuscation. https://github.com/javascript-obfuscator/javascript-obfuscator/issues/641
+
+v1.1.1
+---
+* Fixed https://github.com/javascript-obfuscator/javascript-obfuscator/issues/638
+
+v1.1.0
+---
+* **New option:** `renameProperties` enables renaming of property names
+
+v1.0.1
+---
+* Fixed .d.ts typings. https://github.com/javascript-obfuscator/javascript-obfuscator/issues/623
+
+v1.0.0
+---
+* Looks like obfuscator is ready for the first stable release
+
+v0.28.5
+---
+* Fixed error during code generation for `ObjectPattern` with single `RestElement`. https://github.com/javascript-obfuscator/javascript-obfuscator/issues/607
+
+v0.28.4
+---
+* Added correct `self-defending` code for `target: 'browser-no-eval'`. https://github.com/javascript-obfuscator/javascript-obfuscator/issues/610
+
+v0.28.3
+---
+* Removed memory leak with `identifierNamesGenerator: 'mangled'`
+
 v0.28.2
 ---
 * Fixed change of kinds of variables for dead code with `deadCodeInjection` option

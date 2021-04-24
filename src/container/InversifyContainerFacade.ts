@@ -7,15 +7,19 @@ import { controlFlowTransformersModule } from './modules/node-transformers/Contr
 import { convertingTransformersModule } from './modules/node-transformers/ConvertingTransformersModule';
 import { customCodeHelpersModule } from './modules/custom-code-helpers/CustomCodeHelpersModule';
 import { customNodesModule } from './modules/custom-nodes/CustomNodesModule';
+import { deadCodeInjectionTransformersModule } from './modules/node-transformers/DeadCodeInjectionTransformersModule';
 import { finalizingTransformersModule } from './modules/node-transformers/FinalizingTransformersModule';
 import { generatorsModule } from './modules/generators/GeneratorsModule';
 import { initializingTransformersModule } from './modules/node-transformers/InitializingTransformersModule';
 import { nodeModule } from './modules/node/NodeModule';
 import { nodeTransformersModule } from './modules/node-transformers/NodeTransformersModule';
-import { obfuscatingTransformersModule } from './modules/node-transformers/ObfuscatingTransformersModule';
 import { optionsModule } from './modules/options/OptionsModule';
 import { preparingTransformersModule } from './modules/node-transformers/PreparingTransformersModule';
+import { renameIdentifiersTransformersModule } from './modules/node-transformers/RenameIdentifiersTransformersModule';
+import { renamePropertiesTransformersModule } from './modules/node-transformers/RenamePropertiesTransformersModule';
+import { simplifyingTransformersModule } from './modules/node-transformers/SimplifyingTransformersModule';
 import { storagesModule } from './modules/storages/StoragesModule';
+import { stringArrayTransformersModule } from './modules/node-transformers/StringArrayTransformersModule';
 import { utilsModule } from './modules/utils/UtilsModule';
 
 import { TInputOptions } from '../types/options/TInputOptions';
@@ -24,7 +28,6 @@ import { ICodeTransformersRunner } from '../interfaces/code-transformers/ICodeTr
 import { IInversifyContainerFacade } from '../interfaces/container/IInversifyContainerFacade';
 import { IJavaScriptObfuscator } from '../interfaces/IJavaScriptObfsucator';
 import { ILogger } from '../interfaces/logger/ILogger';
-import { IObfuscationEventEmitter } from '../interfaces/event-emitters/IObfuscationEventEmitter';
 import { IObfuscatedCode } from '../interfaces/source-code/IObfuscatedCode';
 import { ISourceCode } from '../interfaces/source-code/ISourceCode';
 import { INodeTransformersRunner } from '../interfaces/node-transformers/INodeTransformersRunner';
@@ -33,7 +36,6 @@ import { CodeTransformersRunner } from '../code-transformers/CodeTransformersRun
 import { JavaScriptObfuscator } from '../JavaScriptObfuscator';
 import { Logger } from '../logger/Logger';
 import { NodeTransformersRunner } from '../node-transformers/NodeTransformersRunner';
-import { ObfuscationEventEmitter } from '../event-emitters/ObfuscationEventEmitter';
 import { ObfuscatedCode } from '../source-code/ObfuscatedCode';
 import { SourceCode } from '../source-code/SourceCode';
 
@@ -195,11 +197,6 @@ export class InversifyContainerFacade implements IInversifyContainerFacade {
                 };
             });
 
-        this.container
-            .bind<IObfuscationEventEmitter>(ServiceIdentifiers.IObfuscationEventEmitter)
-            .to(ObfuscationEventEmitter)
-            .inSingletonScope();
-
         // modules
         this.container.load(analyzersModule);
         this.container.load(codeTransformersModule);
@@ -207,15 +204,19 @@ export class InversifyContainerFacade implements IInversifyContainerFacade {
         this.container.load(convertingTransformersModule);
         this.container.load(customCodeHelpersModule);
         this.container.load(customNodesModule);
+        this.container.load(deadCodeInjectionTransformersModule);
         this.container.load(finalizingTransformersModule);
         this.container.load(generatorsModule);
         this.container.load(initializingTransformersModule);
         this.container.load(nodeModule);
         this.container.load(nodeTransformersModule);
-        this.container.load(obfuscatingTransformersModule);
         this.container.load(optionsModule);
         this.container.load(preparingTransformersModule);
+        this.container.load(renameIdentifiersTransformersModule);
+        this.container.load(renamePropertiesTransformersModule);
+        this.container.load(simplifyingTransformersModule);
         this.container.load(storagesModule);
+        this.container.load(stringArrayTransformersModule);
         this.container.load(utilsModule);
     }
 

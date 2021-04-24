@@ -1,12 +1,13 @@
 import { assert } from 'chai';
 
-import { readFileAsString } from '../../../../helpers/readFileAsString';
 
 import { NO_ADDITIONAL_NODES_PRESET } from '../../../../../src/options/presets/NoCustomNodes';
 
 import { IdentifierNamesGenerator } from '../../../../../src/enums/generators/identifier-names-generators/IdentifierNamesGenerator';
 
 import { evaluateInWorker } from '../../../../helpers/evaluateInWorker';
+import { beautifyCode } from '../../../../helpers/beautifyCode';
+import { readFileAsString } from '../../../../helpers/readFileAsString';
 
 import { JavaScriptObfuscator } from '../../../../../src/JavaScriptObfuscatorFacade';
 
@@ -131,11 +132,7 @@ describe('SelfDefendingTemplate', function () {
                     selfDefending: true
                 }
             ).getObfuscatedCode();
-            obfuscatedCode = obfuscatedCode
-                .replace(/function\(\){/g, 'function () {')
-                .replace(/=/g, ' = ')
-                .replace(/,/g, ', ')
-                .replace(/;/g, '; ');
+            obfuscatedCode = beautifyCode(obfuscatedCode);
 
             return evaluateInWorker(obfuscatedCode, evaluationTimeout)
                 .then((result: string | null) => {

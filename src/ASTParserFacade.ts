@@ -65,6 +65,7 @@ export class ASTParserFacade {
         const comments: ESTree.Comment[] = [];
         const config: acorn.Options = {
             ...inputConfig,
+            allowAwaitOutsideFunction: true,
             onComment: comments,
             sourceType
         };
@@ -106,7 +107,7 @@ export class ASTParserFacade {
 
         const formattedPointer: string = ASTParserFacade.colorError('>');
         const formattedCodeSlice: string = `...${
-            errorLine.substring(startErrorIndex, endErrorIndex).replace(/^\s+/, '')
+            errorLine.slice(startErrorIndex, endErrorIndex).replace(/^\s+/, '')
         }...`;
 
         throw new Error(

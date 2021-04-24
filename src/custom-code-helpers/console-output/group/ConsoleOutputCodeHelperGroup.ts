@@ -15,14 +15,13 @@ import { ICallsGraphData } from '../../../interfaces/analyzers/calls-graph-analy
 import { initializable } from '../../../decorators/Initializable';
 
 import { CustomCodeHelper } from '../../../enums/custom-code-helpers/CustomCodeHelper';
-import { ObfuscationEvent } from '../../../enums/event-emitters/ObfuscationEvent';
+import { NodeTransformationStage } from '../../../enums/node-transformers/NodeTransformationStage';
 
 import { AbstractCustomCodeHelperGroup } from '../../AbstractCustomCodeHelperGroup';
 import { CallsControllerFunctionCodeHelper } from '../../calls-controller/CallsControllerFunctionCodeHelper';
 import { ConsoleOutputDisableCodeHelper } from '../ConsoleOutputDisableCodeHelper';
 import { NodeAppender } from '../../../node/NodeAppender';
 import { NodeLexicalScopeUtils } from '../../../node/NodeLexicalScopeUtils';
-import { NodeGuards } from '../../../node/NodeGuards';
 
 @injectable()
 export class ConsoleOutputCodeHelperGroup extends AbstractCustomCodeHelperGroup {
@@ -31,11 +30,6 @@ export class ConsoleOutputCodeHelperGroup extends AbstractCustomCodeHelperGroup 
      */
     @initializable()
     protected customCodeHelpers!: Map <CustomCodeHelper, ICustomCodeHelper>;
-
-    /**
-     * @type {ObfuscationEvent}
-     */
-    protected readonly appendEvent: ObfuscationEvent = ObfuscationEvent.BeforeObfuscation;
 
     /**
      * @type {TCustomCodeHelperFactory}
@@ -64,7 +58,7 @@ export class ConsoleOutputCodeHelperGroup extends AbstractCustomCodeHelperGroup 
      * @param {TNodeWithStatements} nodeWithStatements
      * @param {ICallsGraphData[]} callsGraphData
      */
-    public appendNodes (nodeWithStatements: TNodeWithStatements, callsGraphData: ICallsGraphData[]): void {
+    public appendOnPreparingStage (nodeWithStatements: TNodeWithStatements, callsGraphData: ICallsGraphData[]): void {
         if (!this.options.disableConsoleOutput) {
             return;
         }
@@ -82,13 +76,11 @@ export class ConsoleOutputCodeHelperGroup extends AbstractCustomCodeHelperGroup 
             .getLexicalScope(consoleOutputDisableHostNode) ?? null;
 
         const consoleOutputDisableFunctionName: string = consoleOutputDisableLexicalScopeNode
-            && NodeGuards.isProgramNode(consoleOutputDisableLexicalScopeNode)
             ? this.identifierNamesGenerator.generate(consoleOutputDisableLexicalScopeNode)
-            : this.randomGenerator.getRandomString(5);
+            : this.identifierNamesGenerator.generateNext();
         const callsControllerFunctionName: string = consoleOutputDisableLexicalScopeNode
-            && NodeGuards.isProgramNode(consoleOutputDisableLexicalScopeNode)
             ? this.identifierNamesGenerator.generate(consoleOutputDisableLexicalScopeNode)
-            : this.randomGenerator.getRandomString(5);
+            : this.identifierNamesGenerator.generateNext();
 
         // consoleOutputDisableExpression helper nodes append
         this.appendCustomNodeIfExist(
@@ -104,7 +96,7 @@ export class ConsoleOutputCodeHelperGroup extends AbstractCustomCodeHelperGroup 
         this.appendCustomNodeIfExist(
             CustomCodeHelper.CallsControllerFunction,
             (customCodeHelper: ICustomCodeHelper<TInitialData<CallsControllerFunctionCodeHelper>>) => {
-                customCodeHelper.initialize(this.appendEvent, callsControllerFunctionName);
+                customCodeHelper.initialize(NodeTransformationStage.Preparing, callsControllerFunctionName);
 
                 NodeAppender.prepend(callsControllerHostNode, customCodeHelper.getNode());
             }
